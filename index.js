@@ -50,20 +50,25 @@ async function run() {
     app.patch('/employe/hr/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
-      const updatedDoc ={
-        $set:{
-          role :'HR'
+      const updatedDoc = {
+        $set: {
+          role: 'HR'
         }
       }
       const result = await employeCollection.updateOne(query, updatedDoc);
       res.send(result)
     })
 
-    // delete a employe from db
-    app.delete('/employe/:id', async (req, res) => {
+    // fire a employe from db
+    app.patch('/employe/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
-      const result = await employeCollection.deleteOne(query)
+      const updatedDoc = {
+        $set: {
+          status: 'fired'
+        }
+      }
+      const result = await employeCollection.updateOne(query, updatedDoc)
       res.send(result)
     })
 
