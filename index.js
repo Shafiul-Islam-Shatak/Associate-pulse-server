@@ -1,6 +1,7 @@
 const express = require('express')
 const cors = require('cors')
 const app = express()
+const jwt = require('jsonwebtoken')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config()
 const port = process.env.PORT || 5000
@@ -27,6 +28,13 @@ async function run() {
     await client.connect();
 
     const employeCollection = client.db('associate-pulse').collection('employesData')
+
+    // jwt related API
+    app.post('/jwt', async(req, res)=>{
+      const employe = req.body;
+      const token = jwt.sign(employe, process.env.ACCESS_TOKEN, {expiresIn:'24hr'})
+      res.send({token})
+    })
 
     // employe realted api
     app.post('/employesData', async (req, res) => {
