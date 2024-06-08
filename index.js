@@ -30,11 +30,28 @@ async function run() {
     const employeCollection = client.db('associate-pulse').collection('employesData')
 
     // jwt related API
-    app.post('/jwt', async(req, res)=>{
+    app.post('/jwt', async (req, res) => {
       const employe = req.body;
-      const token = jwt.sign(employe, process.env.ACCESS_TOKEN, {expiresIn:'24hr'})
-      res.send({token})
+      const token = jwt.sign(employe, process.env.ACCESS_TOKEN, { expiresIn: '24hr' })
+      res.send({ token })
     })
+
+    // jwt middlewares 
+    const verifyToken = (req, res, next) => {
+      console.log('inside verify token', req.headers.authorization);
+      if (!req.headers.authorization) {
+        return res.status(401).send({ message: 'forbiden access' })
+      }
+      const token = req.headers.authorization.split(' ')[1];
+      jwt.verify(token, process.env.ACCESS_TOKEN, (error, decoded) => {
+        if (error) {
+          return res.status(401).send({ message: 'forbiden access' })
+        }
+        req.decoded = decoded;
+        next()
+      })
+
+    }
 
     // employe realted api
     app.post('/employesData', async (req, res) => {
@@ -49,7 +66,7 @@ async function run() {
       res.send(result)
     })
 
-    app.get('/employesData', async (req, res) => {
+    app.get('/employesData', verifyToken, async (req, res) => {
       const result = await employeCollection.find().toArray()
       res.send(result)
     })
