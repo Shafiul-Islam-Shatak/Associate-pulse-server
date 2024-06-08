@@ -2,12 +2,19 @@ const express = require('express')
 const cors = require('cors')
 const app = express()
 const jwt = require('jsonwebtoken')
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId, Admin } = require('mongodb');
 require('dotenv').config()
 const port = process.env.PORT || 5000
 
 // midleware
-app.use(cors())
+//Must remove "/" from your production URL
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173"
+    ]
+  })
+);
 app.use(express.json())
 
 
@@ -40,12 +47,12 @@ async function run() {
     const verifyToken = (req, res, next) => {
       console.log('inside verify token', req.headers.authorization);
       if (!req.headers.authorization) {
-        return res.status(401).send({ message: 'forbiden access' })
+        return res.status(401).send({ message: 'unauthorized access' })
       }
       const token = req.headers.authorization.split(' ')[1];
       jwt.verify(token, process.env.ACCESS_TOKEN, (error, decoded) => {
         if (error) {
-          return res.status(401).send({ message: 'forbiden access' })
+          return res.status(401).send({ message: 'unauthorized access' })
         }
         req.decoded = decoded;
         next()
@@ -56,7 +63,7 @@ async function run() {
     app.get('/user/admin/:email', verifyToken, async (req, res) => {
       const email = req.params.email;
       if (email !== req.decoded.email) {
-        return res.status(403).send({ message: 'unothorized accecc' })
+        return res.status(403).send({ message: 'forbiden access' })
       }
       const query = { email: email }
       const user = await employeCollection.findOne(query)
@@ -67,6 +74,19 @@ async function run() {
       res.send({ admin })
 
     })
+
+    // verifiy admin after verify token
+    const verifiyAdmin = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email }
+      const user = await employeCollection.findOne(query)
+      const isAdmin = user?.role === 'Admin'
+      if (!isAdmin) {
+        return res.status(403).send({ message: 'forbiden access' })
+      }
+      next()
+    }
+
 
     // employe realted api
     app.post('/employesData', async (req, res) => {
@@ -81,13 +101,13 @@ async function run() {
       res.send(result)
     })
 
-    app.get('/employesData', verifyToken, async (req, res) => {
+    app.get('/employesData', verifyToken, verifiyAdmin, async (req, res) => {
       const result = await employeCollection.find().toArray()
       res.send(result)
     })
 
     // make hr 
-    app.patch('/employe/hr/:id', async (req, res) => {
+    app.patch('/employe/hr/:id',verifyToken, verifiyAdmin, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
       const updatedDoc = {
@@ -100,7 +120,7 @@ async function run() {
     })
 
     // fire a employe from db
-    app.patch('/employe/:id', async (req, res) => {
+    app.patch('/employe/:id', verifyToken, verifiyAdmin, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
       const updatedDoc = {
