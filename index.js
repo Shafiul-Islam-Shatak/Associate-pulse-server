@@ -50,8 +50,23 @@ async function run() {
         req.decoded = decoded;
         next()
       })
-
     }
+
+    // Check isAdmin 
+    app.get('/user/admin/:email', verifyToken, async (req, res) => {
+      const email = req.params.email;
+      if (email !== req.decoded.email) {
+        return res.status(403).send({ message: 'unothorized accecc' })
+      }
+      const query = { email: email }
+      const user = await employeCollection.findOne(query)
+      let admin = false;
+      if (user) {
+        admin = user.role === 'Admin'
+      }
+      res.send({ admin })
+
+    })
 
     // employe realted api
     app.post('/employesData', async (req, res) => {
