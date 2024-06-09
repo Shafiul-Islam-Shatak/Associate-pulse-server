@@ -37,10 +37,11 @@ async function run() {
     const employeCollection = client.db('associate-pulse').collection('employesData')
 
     // jwt related API
-    app.post('/jwt', async (req, res) => {
+    app.post('/jwt', (req, res) => {
       const employe = req.body;
-      const token = jwt.sign(employe, process.env.ACCESS_TOKEN, { expiresIn: '24hr' })
+      const token = jwt.sign(employe, process.env.ACCESS_TOKEN, { expiresIn: '1hr' })
       res.send({ token })
+      console.log(process.env.ACCESS_TOKEN);
     })
 
     // jwt middlewares 
@@ -74,6 +75,21 @@ async function run() {
       res.send({ admin })
 
     })
+    // Check isHR 
+    app.get('/user/hr/:email', verifyToken, async (req, res) => {
+      const email = req.params.email;
+      if (email !== req.decoded.email) {
+        return res.status(403).send({ message: 'forbiden access' })
+      }
+      const query = { email: email }
+      const user = await employeCollection.findOne(query)
+      let hr = false;
+      if (user) {
+        hr = user.role === 'HR'
+      }
+      res.send({ hr })
+
+    })
 
     // verifiy admin after verify token
     const verifiyAdmin = async (req, res, next) => {
@@ -86,9 +102,20 @@ async function run() {
       }
       next()
     }
+    // verifiy hr after verify token
+    const verifiyHR = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email }
+      const user = await employeCollection.findOne(query)
+      const isAdmin = user?.role === 'HR'
+      if (!isHR) {
+        return res.status(403).send({ message: 'forbiden access' })
+      }
+      next()
+    }
 
 
-    // employe realted api
+    // employe entry realted api
     app.post('/employesData', async (req, res) => {
       const employe = req.body
       // check this email already in use
@@ -101,13 +128,20 @@ async function run() {
       res.send(result)
     })
 
+    // all employee data for admin
     app.get('/employesData', verifyToken, verifiyAdmin, async (req, res) => {
       const result = await employeCollection.find().toArray()
       res.send(result)
     })
 
+    // all employee data for hr
+    app.get('/myEmployees', verifyToken, verifiyHR, async (req, res) => {
+      const result = await employeCollection.find().toArray()
+      res.send(result)
+    })
+
     // make hr 
-    app.patch('/employe/hr/:id',verifyToken, verifiyAdmin, async (req, res) => {
+    app.patch('/employe/hr/:id', verifyToken, verifiyAdmin, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
       const updatedDoc = {
