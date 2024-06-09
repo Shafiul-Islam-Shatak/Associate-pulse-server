@@ -107,7 +107,7 @@ async function run() {
       const email = req.decoded.email;
       const query = { email: email }
       const user = await employeCollection.findOne(query)
-      const isAdmin = user?.role === 'HR'
+      const isHR = user?.role === 'HR'
       if (!isHR) {
         return res.status(403).send({ message: 'forbiden access' })
       }
@@ -135,7 +135,7 @@ async function run() {
     })
 
     // all employee data for hr
-    app.get('/myEmployees', verifyToken, verifiyHR, async (req, res) => {
+    app.get('/myEmployess',verifyToken, verifiyHR, async (req, res) => {
       const result = await employeCollection.find().toArray()
       res.send(result)
     })
@@ -160,6 +160,18 @@ async function run() {
       const updatedDoc = {
         $set: {
           status: 'fired'
+        }
+      }
+      const result = await employeCollection.updateOne(query, updatedDoc)
+      res.send(result)
+    })
+    // verify  a employe from db by hr
+    app.patch('/myEmploye/hr/:id', verifyToken, verifiyHR, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const updatedDoc = {
+        $set: {
+          status: 'Verified'
         }
       }
       const result = await employeCollection.updateOne(query, updatedDoc)
