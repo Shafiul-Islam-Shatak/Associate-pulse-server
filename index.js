@@ -42,7 +42,7 @@ async function run() {
       const employe = req.body;
       const token = jwt.sign(employe, process.env.ACCESS_TOKEN, { expiresIn: '1hr' })
       res.send({ token })
-      console.log(process.env.ACCESS_TOKEN);
+      // console.log(process.env.ACCESS_TOKEN);
     })
 
     // jwt middlewares 
@@ -147,7 +147,7 @@ async function run() {
 
     // all employee data for admin
     app.get('/employesData', verifyToken, verifiyAdmin, async (req, res) => {
-      const result = await employeCollection.find().toArray()
+      const result = await employeCollection.find({ status: 'Verified' }).toArray()
       res.send(result)
     })
 
