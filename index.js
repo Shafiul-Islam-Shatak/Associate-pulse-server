@@ -35,6 +35,7 @@ async function run() {
     await client.connect();
 
     const employeCollection = client.db('associate-pulse').collection('employesData')
+    const salaryPaidCollection = client.db('associate-pulse').collection('paidSalary')
 
     // jwt related API
     app.post('/jwt', (req, res) => {
@@ -46,7 +47,7 @@ async function run() {
 
     // jwt middlewares 
     const verifyToken = (req, res, next) => {
-      console.log('inside verify token', req.headers.authorization);
+      // console.log('inside verify token', req.headers.authorization);
       if (!req.headers.authorization) {
         return res.status(401).send({ message: 'unauthorized access' })
       }
@@ -91,6 +92,7 @@ async function run() {
 
     })
 
+
     // verifiy admin after verify token
     const verifiyAdmin = async (req, res, next) => {
       const email = req.decoded.email;
@@ -127,6 +129,21 @@ async function run() {
       const result = await employeCollection.insertOne(employe)
       res.send(result)
     })
+
+
+    // salary payment and not duplicate payment for same month
+    app.post('/employes/peyment', async (req, res) => {
+      const payment = req.body
+      // check this email already in use
+      const query = { month: payment.month , email: payment.email }
+      const existingMonth = await salaryPaidCollection.findOne(query)
+      if (existingMonth) {
+        return res.send({ message: 'Already Paid for this month', insertedId: null })
+      }
+      const result = await salaryPaidCollection.insertOne(payment)
+      res.send(result)
+    })
+
 
     // all employee data for admin
     app.get('/employesData', verifyToken, verifiyAdmin, async (req, res) => {
@@ -177,6 +194,7 @@ async function run() {
       const result = await employeCollection.updateOne(query, updatedDoc)
       res.send(result)
     })
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
