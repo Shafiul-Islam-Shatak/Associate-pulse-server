@@ -135,7 +135,7 @@ async function run() {
     app.post('/employes/peyment', async (req, res) => {
       const payment = req.body
       // check this email already in use
-      const query = { month: payment.month , email: payment.email }
+      const query = { month: payment.month, email: payment.email }
       const existingMonth = await salaryPaidCollection.findOne(query)
       if (existingMonth) {
         return res.send({ message: 'Already Paid for this month', insertedId: null })
@@ -152,8 +152,28 @@ async function run() {
     })
 
     // all employee data for hr
-    app.get('/myEmployess',verifyToken, verifiyHR, async (req, res) => {
+    app.get('/myEmployess', verifyToken, verifiyHR, async (req, res) => {
       const result = await employeCollection.find().toArray()
+      res.send(result)
+    })
+
+    // single employee details  for hr
+    app.get('/details/:id', async (req, res) => {
+      const id = req.params
+      console.log(id);
+      const query = { _id: new ObjectId(id) }
+      const result = await employeCollection.findOne(query)
+      res.send(result)
+    })
+
+    // single employee payment history  for employee
+    app.get('/my-payment-history/:email', async (req, res) => {
+      const email = req.params.email
+      console.log(email);
+      const query = { email : email }
+      console.log(query);
+      const result = await salaryPaidCollection.find(query).toArray()
+      console.log(result);
       res.send(result)
     })
 
