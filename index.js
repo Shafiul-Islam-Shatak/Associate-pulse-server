@@ -158,7 +158,7 @@ async function run() {
 
     // all employee data for admin
     app.get('/employesData', verifyToken, verifiyAdmin, async (req, res) => {
-      const result = await employeCollection.find({ status: 'Verified' }).toArray()
+      const result = await employeCollection.find({ status: { $in: ['Verified', 'fired'] } }).toArray()
       res.send(result)
     })
 
@@ -169,10 +169,10 @@ async function run() {
     })
 
     // single employee details  for hr
-    app.get('/details/:id', async (req, res) => {
-      const id = req.params
-      console.log(id);
-      const query = { _id: new ObjectId(id) }
+    app.get('/details/:email', async (req, res) => {
+      const id = req.params.email
+      // console.log(id);
+      const query = { email: email}
       const result = await employeCollection.findOne(query)
       res.send(result)
     })
@@ -180,11 +180,11 @@ async function run() {
     // single employee payment history  for employee
     app.get('/my-payment-history/:email', async (req, res) => {
       const email = req.params.email
-      console.log(email);
+      // console.log(email);
       const query = { email: email }
-      console.log(query);
+      // console.log(query);
       const result = await salaryPaidCollection.find(query).toArray()
-      console.log(result);
+      // console.log(result);
       res.send(result)
     })
 
