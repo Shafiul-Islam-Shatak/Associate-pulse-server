@@ -36,6 +36,7 @@ async function run() {
 
     const employeCollection = client.db('associate-pulse').collection('employesData')
     const salaryPaidCollection = client.db('associate-pulse').collection('paidSalary')
+    const contactCollection = client.db('associate-pulse').collection('contact')
 
     // jwt related API
     app.post('/jwt', (req, res) => {
@@ -61,6 +62,12 @@ async function run() {
       })
     }
 
+    // contact post
+    app.post('/contact', async (req, res) => {
+      const message = req.body
+      const result = await contactCollection.insertOne(message)
+      res.send(result)
+    })
     // Check isAdmin 
     app.get('/user/admin/:email', verifyToken, async (req, res) => {
       const email = req.params.email;
@@ -115,7 +122,11 @@ async function run() {
       }
       next()
     }
-
+    // contact get
+    app.get('/all-contact', verifyToken, verifiyAdmin, async (req, res) => {
+      const result = await contactCollection.find().toArray()
+      res.send(result)
+    })
 
     // employe entry realted api
     app.post('/employesData', async (req, res) => {
@@ -170,7 +181,7 @@ async function run() {
     app.get('/my-payment-history/:email', async (req, res) => {
       const email = req.params.email
       console.log(email);
-      const query = { email : email }
+      const query = { email: email }
       console.log(query);
       const result = await salaryPaidCollection.find(query).toArray()
       console.log(result);
