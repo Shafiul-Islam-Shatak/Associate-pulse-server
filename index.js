@@ -6,16 +6,19 @@ const { MongoClient, ServerApiVersion, ObjectId, Admin } = require('mongodb');
 require('dotenv').config()
 const port = process.env.PORT || 5000
 
-// midleware
-//Must remove "/" from your production URL
+
 app.use(
   cors({
     origin: [
-      "http://localhost:5173"
+      "http://localhost:5173",
+      "https://associate-pulse.web.app",
+      "https://associate-pulse.firebaseapp.com",
     ]
   })
 );
 app.use(express.json())
+
+
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.eugjqa9.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -37,6 +40,7 @@ async function run() {
     const employeCollection = client.db('associate-pulse').collection('employesData')
     const salaryPaidCollection = client.db('associate-pulse').collection('paidSalary')
     const contactCollection = client.db('associate-pulse').collection('contact')
+    const taskCollection = client.db('associate-pulse').collection('task')
 
     // jwt related API
     app.post('/jwt', (req, res) => {
@@ -68,6 +72,7 @@ async function run() {
       const result = await contactCollection.insertOne(message)
       res.send(result)
     })
+
     // Check isAdmin 
     app.get('/user/admin/:email', verifyToken, async (req, res) => {
       const email = req.params.email;
@@ -172,13 +177,13 @@ async function run() {
     app.get('/details/:email', async (req, res) => {
       const id = req.params.email
       // console.log(id);
-      const query = { email: email}
+      const query = { email: email }
       const result = await employeCollection.findOne(query)
       res.send(result)
     })
 
     // single employee payment history  for employee
-    app.get('/my-payment-history/:email', async (req, res) => {
+    app.get('/my-payment-history/:email', verifyToken, async (req, res) => {
       const email = req.params.email
       // console.log(email);
       const query = { email: email }
@@ -226,9 +231,22 @@ async function run() {
       res.send(result)
     })
 
+    // employy task post
+    app.post('/task', verifyToken, async (req, res) => {
+      const task = req.body
+      const result = await taskCollection.insertOne(task)
+      res.send(result)
+    })
+    // employy task get
+    app.get('/progress', verifyToken, verifiyHR, async (req, res) => {
+      const task = req.body
+      const result = await taskCollection.find().toArray()
+      res.send(result)
+    })
+
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
