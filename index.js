@@ -180,7 +180,7 @@ async function run() {
       const query = { email: email }
       const employe = await employeCollection.findOne(query)
       const payment = await salaryPaidCollection.find(query).toArray()
-      res.send({employe ,payment})
+      res.send({ employe, payment })
     })
 
     // single employee payment history  for employee
@@ -189,7 +189,7 @@ async function run() {
       // console.log(email);
       const query = { email: email }
       // console.log(query);
-      const result = await salaryPaidCollection.find(query).sort({month : -1}).toArray()
+      const result = await salaryPaidCollection.find(query).sort({ month: -1 }).toArray()
       // console.log(result);
       res.send(result)
     })
@@ -197,7 +197,7 @@ async function run() {
     app.get('/my-task/:email', verifyToken, async (req, res) => {
       const email = req.params.email
       const query = { email: email }
-      const result = await taskCollection.find(query).sort({date : -1}).toArray()
+      const result = await taskCollection.find(query).sort({ date: -1 }).toArray()
       res.send(result)
     })
 
@@ -216,7 +216,7 @@ async function run() {
     // update salary
     app.patch('/employe/update-salary/:id', verifyToken, verifiyAdmin, async (req, res) => {
       const id = req.params.id;
-      const newSalary = req.body.salary; 
+      const newSalary = req.body.salary;
       const query = { _id: new ObjectId(id) }
       const updatedDoc = {
         $set: {
@@ -260,10 +260,36 @@ async function run() {
     })
     // employy task get
     app.get('/progress', verifyToken, verifiyHR, async (req, res) => {
-      const task = req.body
-      const result = await taskCollection.find().toArray()
-      res.send(result)
-    })
+      try {
+        const { employeeName, month } = req.query;
+        console.log(month);
+
+        // Define match stage based on query parameters
+        const matchStage = {};
+        if (employeeName) {
+          matchStage.name = employeeName; // Filter by employee name
+        }
+        if (month) {
+          // Convert month name to a regex pattern that matches the format in your date field
+          const monthRegex = new RegExp(`${month}`, 'i');
+          console.log(monthRegex);
+          matchStage.date = { $regex: monthRegex }; // Filter by month
+        }
+
+        // Pipeline to filter tasks
+        const pipeline = [];
+        if (Object.keys(matchStage).length > 0) {
+          pipeline.push({ $match: matchStage });
+        }
+        pipeline.push({ $sort: { date: -1 } }); // Optionally sort by date, descending
+
+        const result = await taskCollection.aggregate(pipeline).toArray();
+        res.send(result);
+      } catch (error) {
+        console.error('Error fetching progress:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+      }
+    });
 
 
     // Send a ping to confirm a successful connection
