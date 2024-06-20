@@ -175,11 +175,12 @@ async function run() {
 
     // single employee details  for hr
     app.get('/details/:email', async (req, res) => {
-      const id = req.params.email
+      const email = req.params.email
       // console.log(id);
       const query = { email: email }
-      const result = await employeCollection.findOne(query)
-      res.send(result)
+      const employe = await employeCollection.findOne(query)
+      const payment = await salaryPaidCollection.find(query).toArray()
+      res.send({employe ,payment})
     })
 
     // single employee payment history  for employee
@@ -200,6 +201,20 @@ async function run() {
       const updatedDoc = {
         $set: {
           role: 'HR'
+        }
+      }
+      const result = await employeCollection.updateOne(query, updatedDoc);
+      res.send(result)
+    })
+    // update salary
+    app.patch('/employe/update-salary/:id', verifyToken, verifiyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const newSalary = req.body.salary; 
+      console.log(newSalary);
+      const query = { _id: new ObjectId(id) }
+      const updatedDoc = {
+        $set: {
+          salary: newSalary
         }
       }
       const result = await employeCollection.updateOne(query, updatedDoc);
