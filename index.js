@@ -189,8 +189,15 @@ async function run() {
       // console.log(email);
       const query = { email: email }
       // console.log(query);
-      const result = await salaryPaidCollection.find(query).toArray()
+      const result = await salaryPaidCollection.find(query).sort({month : -1}).toArray()
       // console.log(result);
+      res.send(result)
+    })
+    // loggin employee work sheet data
+    app.get('/my-task/:email', verifyToken, async (req, res) => {
+      const email = req.params.email
+      const query = { email: email }
+      const result = await taskCollection.find(query).sort({date : -1}).toArray()
       res.send(result)
     })
 
@@ -210,7 +217,6 @@ async function run() {
     app.patch('/employe/update-salary/:id', verifyToken, verifiyAdmin, async (req, res) => {
       const id = req.params.id;
       const newSalary = req.body.salary; 
-      console.log(newSalary);
       const query = { _id: new ObjectId(id) }
       const updatedDoc = {
         $set: {
