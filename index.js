@@ -186,12 +186,19 @@ async function run() {
     // single employee payment history  for employee
     app.get('/my-payment-history/:email', verifyToken, async (req, res) => {
       const email = req.params.email
-      // console.log(email);
+      const page = parseInt(req.query.page)
+      const size = parseInt(req.query.size)
       const query = { email: email }
-      // console.log(query);
-      const result = await salaryPaidCollection.find(query).sort({ month: -1 }).toArray()
-      // console.log(result);
-      res.send(result)
+      const totalCount = await salaryPaidCollection.countDocuments(query)
+      const result = await salaryPaidCollection.find(query)
+        .skip(page*size)
+        .limit(size)
+        .sort({ month: -1 })
+        .toArray()
+        res.send({
+          totalCount : totalCount,
+          payments: result
+      });
     })
     // loggin employee work sheet data
     app.get('/my-task/:email', verifyToken, async (req, res) => {
